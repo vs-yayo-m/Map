@@ -58,31 +58,38 @@
     addressBox.value = '';
     coordsBox.value = '';
 
-    try {
-      // Relative URL call works both locally and on Vercel deployment
-      const response = await fetch('/api/decode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: input })
-      });
+     
+       try {
+  const response = await fetch('/api/decode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: input })
+  });
 
-      const data = await response.json();
+  const contentType = response.headers.get('content-type') || '';
 
-      if (!response.ok || data.error) {
-        throw new Error(data.error || 'Failed to decode address');
-      }
-
-      addressBox.value = data.address;
-      coordsBox.value = `${data.latitude}, ${data.longitude}`;
-      status.className = 'status success';
-      status.innerText = 'Address retrieved successfully!';
-    } catch (err) {
-      status.className = 'status error';
-      status.innerText = err.message;
-    } finally {
-      btn.disabled = false;
-    }
+  if (!contentType.includes('application/json')) {
+    const errorText = await response.text();
+    throw new Error(`Server returned HTML error (${response.status}): Check your Vercel logs or API route path.`);
   }
+
+  const data = await response.json();
+
+  if (!response.ok || data.error) {
+    throw new Error(data.error || 'Failed to decode address');
+  }
+
+  addressBox.value = data.address;
+  coordsBox.value = `${data.latitude}, ${data.longitude}`;
+  status.className = 'status success';
+  status.innerText = 'Address retrieved successfully!';
+} catch (err) {
+  status.className = 'status error';
+  status.innerText = err.message;
+} finally {
+  btn.disabled = false;
+}
+}
 
   // Automatically trigger on paste
   document.getElementById('urlInput').addEventListener('paste', () => {
