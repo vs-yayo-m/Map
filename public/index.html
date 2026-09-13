@@ -6,94 +6,238 @@
   <title>Google Maps Address Resolver</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #f1f5f9; display: flex; justify-content: center; padding: 30px 16px; margin: 0; }
-    .card { background: #fff; max-width: 480px; width: 100%; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
-    h3 { margin-top: 0; color: #0f172a; }
-    label { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block; }
-    input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; margin-bottom: 14px; outline: none; }
-    button { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    button:disabled { background: #94a3b8; }
-    .status { font-size: 13px; margin: 10px 0; min-height: 18px; }
-    .status.loading { color: #d97706; }
-    .status.error { color: #dc2626; }
-    .status.success { color: #16a34a; }
-    textarea { resize: vertical; min-height: 80px; }
+    body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 16px; margin: 0; }
+    .container { max-width: 600px; width: 100%; }
+    .card { background: #fff; border-radius: 16px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.12); }
+    h1 { margin: 0 0 8px 0; color: #0f172a; font-size: 24px; }
+    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 24px; }
+    .form-group { margin-bottom: 18px; }
+    label { font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+    input:focus, textarea:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s; }
+    button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.2); }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; }
+    button:active:not(:disabled) { transform: translateY(0); }
+    .status { font-size: 13px; margin: 12px 0; min-height: 18px; padding: 8px 12px; border-radius: 6px; }
+    .status.loading { color: #d97706; background: #fef3c7; border-left: 3px solid #f59e0b; }
+    .status.error { color: #7f1d1d; background: #fee2e2; border-left: 3px solid #ef4444; }
+    .status.success { color: #166534; background: #dcfce7; border-left: 3px solid #22c55e; }
+    .status.info { color: #1e40af; background: #dbeafe; border-left: 3px solid #3b82f6; }
+    textarea { resize: vertical; min-height: 100px; }
+    input[readonly], textarea[readonly] { background: #f8fafc; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-2 .form-group { margin-bottom: 0; }
+    .debug-panel { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e2e8f0; }
+    .debug-toggle { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; color: #334155; width: 100%; text-align: left; }
+    .debug-toggle:hover { background: #e2e8f0; }
+    .debug-log { display: none; background: #1e293b; color: #e2e8f0; padding: 12px; border-radius: 6px; font-family: 'Monaco', 'Courier New', monospace; font-size: 11px; max-height: 300px; overflow-y: auto; margin-top: 8px; line-height: 1.4; }
+    .debug-log.show { display: block; }
+    .debug-log span { color: #64748b; }
+    .debug-log .tag { color: #fbbf24; font-weight: 600; }
+    .debug-log .success { color: #4ade80; }
+    .debug-log .error { color: #f87171; }
+    @media (max-width: 480px) {
+      .card { padding: 20px; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<div class="card">
-  <h3>Maps Address Autofill</h3>
-  
-  <label for="urlInput">Paste Google Maps Link</label>
-  <input type="text" id="urlInput" placeholder="https://maps.app.goo.gl/..." />
+<div class="container">
+  <div class="card">
+    <h1>🗺️ Maps Decoder</h1>
+    <p class="subtitle">Paste a Google Maps link to auto-fill coordinates and address</p>
+    
+    <div class="form-group">
+      <label for="urlInput">Google Maps Link</label>
+      <input type="text" id="urlInput" placeholder="Paste: https://maps.app.goo.gl/..." autocomplete="off" />
+    </div>
 
-  <button id="decodeBtn" onclick="resolveAddress()">Decode Address</button>
-  <div id="status" class="status"></div>
+    <button id="decodeBtn" onclick="resolveAddress()">🔍 Decode Address</button>
+    <div id="status" class="status"></div>
 
-  <label for="address">Full Address</label>
-  <textarea id="address" readonly placeholder="Address will auto-populate..."></textarea>
+    <div class="form-group">
+      <label for="address">Full Address</label>
+      <textarea id="address" readonly placeholder="Address will auto-populate after decoding..."></textarea>
+    </div>
 
-  <label for="coords">Coordinates</label>
-  <input type="text" id="coords" readonly placeholder="Lat, Lng" />
+    <div class="grid-2">
+      <div class="form-group">
+        <label for="latitude">Latitude</label>
+        <input type="text" id="latitude" readonly placeholder="0.000000" />
+      </div>
+      <div class="form-group">
+        <label for="longitude">Longitude</label>
+        <input type="text" id="longitude" readonly placeholder="0.000000" />
+      </div>
+    </div>
+
+    <div class="debug-panel">
+      <button class="debug-toggle" onclick="toggleDebugLog()">📋 Debug Log (Click to expand)</button>
+      <div id="debugLog" class="debug-log"></div>
+    </div>
+  </div>
 </div>
 
 <script>
+  const API_ENDPOINT = '/api/decode';
+  const TIMEOUT_MS = 30000;
+
   async function resolveAddress() {
     const input = document.getElementById('urlInput').value.trim();
     const status = document.getElementById('status');
     const addressBox = document.getElementById('address');
-    const coordsBox = document.getElementById('coords');
+    const latBox = document.getElementById('latitude');
+    const lngBox = document.getElementById('longitude');
     const btn = document.getElementById('decodeBtn');
+    const debugLog = document.getElementById('debugLog');
+
+    debugLog.innerHTML = '';
+    debugLog.classList.remove('show');
 
     if (!input) {
-      status.className = 'status error';
-      status.innerText = 'Please paste a valid URL.';
+      setStatus('error', '❌ Please paste a valid Google Maps link.');
+      return;
+    }
+
+    if (!isValidUrl(input)) {
+      setStatus('error', '❌ Invalid URL format. Make sure it starts with http:// or https://');
       return;
     }
 
     btn.disabled = true;
-    status.className = 'status loading';
-    status.innerText = 'Expanding link and resolving coordinates...';
+    setStatus('loading', '⏳ Resolving link and extracting coordinates...');
     addressBox.value = '';
-    coordsBox.value = '';
+    latBox.value = '';
+    lngBox.value = '';
 
-     
-       try {
-  const response = await fetch('/api/decode', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url: input })
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: input }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      const contentType = response.headers.get('content-type') || '';
+
+      if (!contentType.includes('application/json')) {
+        const errorText = await response.text();
+        throw new Error(`Server error (${response.status}): ${errorText.substring(0, 100)}`);
+      }
+
+      const data = await response.json();
+
+      // Log debug info if present
+      if (data.debug) {
+        addDebugLog(data.debug);
+      }
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Failed to decode address');
+      }
+
+      // Success
+      addressBox.value = data.address;
+      latBox.value = data.latitude;
+      lngBox.value = data.longitude;
+      
+      setStatus('success', `✅ Successfully decoded! Coordinates: ${data.latitude}, ${data.longitude}`);
+      
+      console.log('Decode successful:', {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        url: data.targetUrl
+      });
+
+    } catch (err) {
+      let errorMsg = err.message;
+      
+      if (err.name === 'AbortError') {
+        errorMsg = '⏱️ Request timed out. The server took too long to respond.';
+      } else if (err.message.includes('Failed to fetch')) {
+        errorMsg = '🌐 Network error. Check your connection and CORS settings.';
+      }
+      
+      setStatus('error', `❌ ${errorMsg}`);
+      console.error('Decode error:', err);
+      
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function setStatus(type, message) {
+    const status = document.getElementById('status');
+    status.className = `status ${type}`;
+    status.innerText = message;
+  }
+
+  function addDebugLog(debugStr) {
+    const debugLog = document.getElementById('debugLog');
+    const lines = debugStr.split(' | ');
+    
+    debugLog.innerHTML = lines.map(line => {
+      const match = line.match(/\[(\w+)\]\s*(.*)/);
+      if (match) {
+        const [, tag, msg] = match;
+        let tagClass = '';
+        if (tag === 'ERROR') tagClass = 'error';
+        else if (tag === 'COORDS' || tag === 'EXTRACT') tagClass = 'success';
+        return `<div><span class="tag">[${tag}]</span> ${escapeHtml(msg)}</div>`;
+      }
+      return `<div>${escapeHtml(line)}</div>`;
+    }).join('');
+    
+    debugLog.classList.add('show');
+  }
+
+  function toggleDebugLog() {
+    const debugLog = document.getElementById('debugLog');
+    if (debugLog.innerHTML) {
+      debugLog.classList.toggle('show');
+    }
+  }
+
+  function escapeHtml(text) {
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return text.replace(/[&<>"']/g, m => map[m]);
+  }
+
+  function isValidUrl(str) {
+    try {
+      const url = new URL(str);
+      return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  // Auto-decode on paste
+  document.getElementById('urlInput').addEventListener('paste', () => {
+    setTimeout(resolveAddress, 100);
   });
 
-  const contentType = response.headers.get('content-type') || '';
-
-  if (!contentType.includes('application/json')) {
-    const errorText = await response.text();
-    throw new Error(`Server returned HTML error (${response.status}): Check your Vercel logs or API route path.`);
-  }
-
-  const data = await response.json();
-
-  if (!response.ok || data.error) {
-    throw new Error(data.error || 'Failed to decode address');
-  }
-
-  addressBox.value = data.address;
-  coordsBox.value = `${data.latitude}, ${data.longitude}`;
-  status.className = 'status success';
-  status.innerText = 'Address retrieved successfully!';
-} catch (err) {
-  status.className = 'status error';
-  status.innerText = err.message;
-} finally {
-  btn.disabled = false;
-}
-}
-
-  // Automatically trigger on paste
-  document.getElementById('urlInput').addEventListener('paste', () => {
-    setTimeout(resolveAddress, 150);
+  // Clear status on input
+  document.getElementById('urlInput').addEventListener('input', () => {
+    const status = document.getElementById('status');
+    if (status.className.includes('error')) {
+      status.className = 'status';
+      status.innerText = '';
+    }
   });
 </script>
 
