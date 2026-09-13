@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google Maps Address Resolver</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #f1f5f9; display: flex; justify-content: center; padding: 30px 16px; margin: 0; }
+    .card { background: #fff; max-width: 480px; width: 100%; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    h3 { margin-top: 0; color: #0f172a; }
+    label { font-size: 13px; font-weight: 600; color: #334155; margin-bottom: 6px; display: block; }
+    input, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; margin-bottom: 14px; outline: none; }
+    button { width: 100%; padding: 12px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    button:disabled { background: #94a3b8; }
+    .status { font-size: 13px; margin: 10px 0; min-height: 18px; }
+    .status.loading { color: #d97706; }
+    .status.error { color: #dc2626; }
+    .status.success { color: #16a34a; }
+    textarea { resize: vertical; min-height: 80px; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h3>Maps Address Autofill</h3>
+  
+  <label for="urlInput">Paste Google Maps Link</label>
+  <input type="text" id="urlInput" placeholder="https://maps.app.goo.gl/..." />
+
+  <button id="decodeBtn" onclick="resolveAddress()">Decode Address</button>
+  <div id="status" class="status"></div>
+
+  <label for="address">Full Address</label>
+  <textarea id="address" readonly placeholder="Address will auto-populate..."></textarea>
+
+  <label for="coords">Coordinates</label>
+  <input type="text" id="coords" readonly placeholder="Lat, Lng" />
+</div>
+
+<script>
+  async function resolveAddress() {
+    const input = document.getElementById('urlInput').value.trim();
+    const status = document.getElementById('status');
+    const addressBox = document.getElementById('address');
+    const coordsBox = document.getElementById('coords');
+    const btn = document.getElementById('decodeBtn');
+
+    if (!input) {
+      status.className = 'status error';
+      status.innerText = 'Please paste a valid URL.';
+      return;
+    }
+
+    btn.disabled = true;
+    status.className = 'status loading';
+    status.innerText = 'Expanding link and resolving coordinates...';
+    addressBox.value = '';
+    coordsBox.value = '';
+
+    try {
+      // Relative URL call works both locally and on Vercel deployment
+      const response = await fetch('/api/decode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: input })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Failed to decode address');
+      }
+
+      addressBox.value = data.address;
+      coordsBox.value = `${data.latitude}, ${data.longitude}`;
+      status.className = 'status success';
+      status.innerText = 'Address retrieved successfully!';
+    } catch (err) {
+      status.className = 'status error';
+      status.innerText = err.message;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Automatically trigger on paste
+  document.getElementById('urlInput').addEventListener('paste', () => {
+    setTimeout(resolveAddress, 150);
+  });
+</script>
+
+</body>
+</html>
